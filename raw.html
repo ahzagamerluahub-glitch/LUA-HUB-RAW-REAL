@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>LUA-HUB Raw Reader</title>
+</head>
+<body style="background:#0d1117; color:#58a6ff; font-family:monospace; margin:0; padding:16px; white-space:pre-wrap;">
+<div id="out">Loading script...</div>
 
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCXuhVe-wcs4ZX8ycsosa4HQZA6Fzch4oc",
+        authDomain: "lua-hub-46f28.firebaseapp.com",
+        projectId: "lua-hub-46f28",
+        storageBucket: "lua-hub-46f28.firebasestorage.app",
+        messagingSenderId: "475443044378",
+        appId: "1:475443044378:web:568c401ca8eed839feb1a3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const scriptId = urlParams.get('id');
+
+    async function loadScript() {
+        if (!scriptId) {
+            document.body.innerText = "-- Error: ID Script tidak ditemukan!";
+            return;
+        }
+
+        try {
+            const docRef = doc(db, "scripts", scriptId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                document.body.innerText = docSnap.data().code;
+            } else {
+                document.body.innerText = "-- Error 404: Script '" + scriptId + "' tidak ditemukan!";
+            }
+        } catch (err) {
+            document.body.innerText = "-- Error: " + err.message;
+        }
+    }
+
+    loadScript();
+</script>
+</body>
+</html>
