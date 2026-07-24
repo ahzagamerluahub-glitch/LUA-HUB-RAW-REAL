@@ -274,10 +274,10 @@
             <p>Konversi script Lua Anda menjadi Raw Direct Loadstring secara instan</p>
         </header>
 
-        <!-- Custom Name / Slug Input -->
+        <!-- Nama Kustom Script -->
         <div class="field-group">
-            <label><i class="fa-solid fa-tag"></i> Nama Script / Custom Slug (Tanpa Spasi)</label>
-            <input type="text" id="scriptSlug" placeholder="contoh: brookhaven-script-v2">
+            <label><i class="fa-solid fa-tag"></i> Nama Custom Script (Ketik Nama Script Kamu)</label>
+            <input type="text" id="scriptSlug" placeholder="contoh: myscript">
         </div>
 
         <!-- Upload File Drag & Drop -->
@@ -326,7 +326,7 @@
         </div>
     </div>
 
-    <!-- Script Logic dengan Firebase Firestore Custom Doc ID -->
+    <!-- Script Logic Menggunakan Domain GitHub -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -353,26 +353,26 @@
                 return;
             }
 
-            // Jika Nama Script kosong, buat nama otomatis tanpa acak aneh
             if (!slugInput) {
-                slugInput = "script-" + Date.now();
-            } else {
-                // Bersihkan spasi & karakter khusus agar aman di URL
-                slugInput = slugInput.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+                alert('Harap isi Nama Custom Script terlebih dahulu!');
+                return;
             }
 
+            // Merapikan format nama kustom agar aman di URL
+            slugInput = slugInput.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+
             const btn = document.getElementById('btnGenerate');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving to LuaHub...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
             btn.disabled = true;
 
             try {
-                // Menyimpan ke Firestore menggunakan custom ID pilihan kamu
+                // Simpan ke database dengan ID Kustom
                 await setDoc(doc(db, "scripts", slugInput), {
                     code: luaCode,
                     createdAt: new Date()
                 });
 
-                // Tautan cantik sesuai nama yang diinput
+                // Tautan menggunakan domain GitHub milikmu sendiri (TANPA FIREBASE CLOUD FUNCTIONS / TANPA ANGKA ACAK)
                 const directRawUrl = `https://ahzagamerlushub-glitch.github.io/LUA-HUB-RAW-REAL/raw.html?id=${slugInput}`;
                 const loadstringFormat = `loadstring(game:HttpGet("${directRawUrl}"))()`;
 
@@ -395,7 +395,6 @@
                 document.getElementById('fileName').innerText = file.name;
                 document.getElementById('fileInfo').style.display = 'block';
 
-                // Otomatis isi Nama Script berdasarkan nama file jika belum diisi
                 if (!document.getElementById('scriptSlug').value) {
                     const cleanName = file.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9-_]/g, '-');
                     document.getElementById('scriptSlug').value = cleanName;
