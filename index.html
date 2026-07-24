@@ -320,12 +320,12 @@
         </div>
     </div>
 
-    <!-- Firebase Script Logic -->
+    <!-- Firebase Script (Module) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Konfigurasi Firebase lua-hub-46f28 milikmu
+        // Config Firebase milikmu
         const firebaseConfig = {
             apiKey: "AIzaSyCXuhVe-wcs4ZX8ycsosa4HQZA6Fzch4oc",
             authDomain: "lua-hub-46f28.firebaseapp.com",
@@ -339,7 +339,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Fungsi Generate Raw Link menggunakan Firebase
+        // Menghubungkan fungsi ke global scope 'window' agar tombol HTML bisa memanggilnya
         window.createRawLink = async function() {
             const luaCode = document.getElementById('luaText').value;
             if (!luaCode.trim()) {
@@ -352,16 +352,22 @@
             btn.disabled = true;
 
             try {
-                // ID unik acak 6 karakter untuk skrip (contoh: a8x91z)
+                // Membuat ID acak 6 Karakter
                 const scriptId = Math.random().toString(36).substring(2, 8);
 
-                // Menyimpan ke Firestore
-                await setDoc(doc(db, "scripts", scriptId), {
+                // Timeout 8 detik jika koneksi bermasalah
+                const savePromise = setDoc(doc(db, "scripts", scriptId), {
                     code: luaCode,
                     createdAt: new Date()
                 });
 
-                // URL hasil berformat LuaHub
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Timeout! Cek koneksi atau Firestore Rules kamu.")), 8000)
+                );
+
+                await Promise.race([savePromise, timeoutPromise]);
+
+                // Tautan Direct Raw & Loadstring Roblox
                 const directRawUrl = `https://asia-southeast1-lua-hub-46f28.cloudfunctions.net/getRaw?id=${scriptId}`;
                 const loadstringFormat = `loadstring(game:HttpGet("${directRawUrl}"))()`;
 
@@ -370,14 +376,15 @@
                 document.getElementById('resultBox').style.display = 'block';
 
             } catch (err) {
-                alert('Error LuaHub Firebase: ' + err.message);
+                console.error("Firebase Error:", err);
+                alert('Gagal menyimpan: ' + err.message);
             } finally {
                 btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Get Raw Link`;
                 btn.disabled = false;
             }
         };
 
-        // Event Handling Upload File & Copy
+        // Fungsi Pendukung File Upload & Copy Clipboard
         window.handleFileUpload = function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -390,6 +397,19 @@
                 };
                 reader.readAsText(file);
             }
+        };
+
+        window.copyToClipboard = function(id, btnElement) {
+            const inputField = document.getElementById(id);
+            inputField.select();
+            navigator.clipboard.writeText(inputField.value);
+            
+            const originalHTML = btnElement.innerHTML;
+            btnElement.innerHTML = `<i class="fa-solid fa-check" style="color:#00ff88;"></i> Copied!`;
+            
+            setTimeout(() => {
+                btnElement.innerHTML = originalHTML;
+            }, 1800);
         };
 
         const dropZone = document.getElementById('dropZone');
@@ -406,19 +426,6 @@
                 dropZone.classList.remove('dragover');
             }, false);
         });
-
-        window.copyToClipboard = function(id, btnElement) {
-            const inputField = document.getElementById(id);
-            inputField.select();
-            navigator.clipboard.writeText(inputField.value);
-            
-            const originalHTML = btnElement.innerHTML;
-            btnElement.innerHTML = `<i class="fa-solid fa-check" style="color:#00ff88;"></i> Copied!`;
-            
-            setTimeout(() => {
-                btnElement.innerHTML = originalHTML;
-            }, 1800);
-        };
     </script>
 </body>
 </html>
