@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUA-HUB-RAW | Premium Lua Uploader</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #07090e;
+            --card-bg: rgba(18, 22, 33, 0.75);
+            --card-border: rgba(0, 255, 136, 0.15);
+            --accent-green: #00ff88;
+            --accent-glow: rgba(0, 255, 136, 0.35);
+            --accent-blue: #00bfff;
+            --text-main: #f0f6fc;
+            --text-muted: #8b949e;
+            --input-bg: #0d1117;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: var(--bg-main);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(0, 255, 136, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(0, 191, 255, 0.08) 0%, transparent 40%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 255, 136, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        header h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-green);
+            text-shadow: 0 0 15px var(--accent-glow);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        .field-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        label i {
+            color: var(--accent-green);
+        }
+
+        /* Drag & Drop Zone */
+        .upload-zone {
+            background: var(--input-bg);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.03);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+        }
+
+        .upload-zone i {
+            font-size: 28px;
+            color: var(--accent-green);
+            margin-bottom: 8px;
+        }
+
+        .upload-zone p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .upload-zone span {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Textarea Editor */
+        textarea {
+            width: 100%;
+            height: 220px;
+            background: var(--input-bg);
+            color: #58a6ff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.15);
+        }
+
+        /* Action Button */
+        .btn-generate {
+            width: 100%;
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            background: #00e67a;
+        }
+
+        .btn-generate:disabled {
+            background: #21262d;
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Result Section */
+        .result-section {
+            display: none;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-with-button {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .btn-copy {
+            background: #21262d;
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: var(--accent-blue);
+            margin-top: 6px;
+            display: none;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1><i class="fa-solid fa-code"></i> LUA-HUB-RAW</h1>
+            <p>Konversi script Lua Anda menjadi Raw Direct Loadstring secara instan</p>
+        </header>
+
+        <!-- Upload File Drag & Drop -->
+        <div class="field-group">
+            <label><i class="fa-solid fa-file-arrow-up"></i> Upload File Script</label>
+            <div class="upload-zone" id="dropZone">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <p>Tarik & Lepas file <span>.lua</span> / <span>.txt</span> ke sini atau <span>Cari File</span></p>
+                <input type="file" id="luaFile" accept=".lua,.txt" onchange="handleFileUpload(event)">
+            </div>
+            <div id="fileInfo" class="file-info"><i class="fa-solid fa-check"></i> File Terpilih: <span id="fileName"></span></div>
+        </div>
+
+        <!-- Editor Input Teks -->
+        <div class="field-group">
+            <label><i class="fa-solid fa-terminal"></i> Atau Paste Kode Lua Murni</label>
+            <textarea id="luaText" placeholder="-- Tempel kode Lua Anda di sini&#10;print('Hello World from Lua Hub!')"></textarea>
+        </div>
+
+        <!-- Tombol Generate -->
+        <button class="btn-generate" id="btnGenerate" onclick="createRawLink()">
+            <i class="fa-solid fa-bolt"></i> Get Raw Link
+        </button>
+
+        <!-- Hasil Output -->
+        <div id="resultBox" class="result-section">
+            <div class="field-group">
+                <label><i class="fa-solid fa-link"></i> Direct Raw URL</label>
+                <div class="input-with-button">
+                    <input type="text" id="rawUrlInput" readonly>
+                    <button class="btn-copy" onclick="copyToClipboard('rawUrlInput', this)">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label><i class="fa-solid fa-code-merge"></i> Ready Loadstring Format (Roblox)</label>
+                <div class="input-with-button">
+                    <input type="text" id="loadstringInput" readonly>
+                    <button class="btn-copy" onclick="copyToClipboard('loadstringInput', this)">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File Upload Handler & Feedback
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').innerText = file.name;
+                document.getElementById('fileInfo').style.display = 'block';
+
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    document.getElementById('luaText').value = evt.target.result;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Drag and Drop Effects
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        // Generate Raw Link API Call
+        async function createRawLink() {
+            const luaCode = document.getElementById('luaText').value;
+            if (!luaCode.trim()) {
+                alert('Harap masukkan teks atau upload file script Lua!');
+                return;
+            }
+
+            const btn = document.getElementById('btnGenerate');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Raw...`;
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('https://dpaste.com/api/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'content': luaCode,
+                        'syntax': 'lua',
+                        'expiry_days': '365'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal dari Server Dpaste');
+                }
+
+                const pasteUrl = await response.text();
+                const cleanUrl = pasteUrl.trim();
+                
+                const directRawUrl = cleanUrl + ".txt";
+                const loadstringFormat = `loadstring(game:HttpGet("${directRawUrl}"))()`;
+
+                document.getElementById('rawUrlInput').value = directRawUrl;
+                document.getElementById('loadstringInput').value = loadstringFormat;
+                document.getElementById('resultBox').style.display = 'block';
+
+            } catch (err) {
+                alert('Error: ' + err.message + '\nPeriksa koneksi internet Anda!');
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Get Raw Link`;
+                btn.disabled = false;
+            }
+        }
+
+        // Clipboard Copy Logic
+        function copyToClipboard(id, btnElement) {
+            const inputField = document.getElementById(id);
+            inputField.select();
+            navigator.clipboard.writeText(inputField.value);
+            
+            const originalHTML = btnElement.innerHTML;
+            btnElement.innerHTML = `<i class="fa-solid fa-check" style="color:#00ff88;"></i> Copied!`;
+            
+            setTimeout(() => {
+                btnElement.innerHTML = originalHTML;
+            }, 1800);
+        }
+    </script>
+</body>
+</html>
