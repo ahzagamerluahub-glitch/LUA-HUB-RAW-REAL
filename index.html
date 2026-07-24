@@ -320,12 +320,65 @@
         </div>
     </div>
 
-    <script>
-        // MASUKKAN GITHUB PERSONAL ACCESS TOKEN BARU KAMU DI SINI:
-        const GITHUB_TOKEN = 'TOKEN_BARU_KAMU_DI_SINI';
+    <!-- Firebase Script Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // File Upload Handler & Feedback
-        function handleFileUpload(e) {
+        // Konfigurasi Firebase lua-hub-46f28 milikmu
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXuhVe-wcs4ZX8ycsosa4HQZA6Fzch4oc",
+            authDomain: "lua-hub-46f28.firebaseapp.com",
+            projectId: "lua-hub-46f28",
+            storageBucket: "lua-hub-46f28.firebasestorage.app",
+            messagingSenderId: "475443044378",
+            appId: "1:475443044378:web:568c401ca8eed839feb1a3",
+            measurementId: "G-BJ7J8034MP"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Fungsi Generate Raw Link menggunakan Firebase
+        window.createRawLink = async function() {
+            const luaCode = document.getElementById('luaText').value;
+            if (!luaCode.trim()) {
+                alert('Harap masukkan teks atau upload file script Lua!');
+                return;
+            }
+
+            const btn = document.getElementById('btnGenerate');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving to LuaHub...`;
+            btn.disabled = true;
+
+            try {
+                // ID unik acak 6 karakter untuk skrip (contoh: a8x91z)
+                const scriptId = Math.random().toString(36).substring(2, 8);
+
+                // Menyimpan ke Firestore
+                await setDoc(doc(db, "scripts", scriptId), {
+                    code: luaCode,
+                    createdAt: new Date()
+                });
+
+                // URL hasil berformat LuaHub
+                const directRawUrl = `https://asia-southeast1-lua-hub-46f28.cloudfunctions.net/getRaw?id=${scriptId}`;
+                const loadstringFormat = `loadstring(game:HttpGet("${directRawUrl}"))()`;
+
+                document.getElementById('rawUrlInput').value = directRawUrl;
+                document.getElementById('loadstringInput').value = loadstringFormat;
+                document.getElementById('resultBox').style.display = 'block';
+
+            } catch (err) {
+                alert('Error LuaHub Firebase: ' + err.message);
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Get Raw Link`;
+                btn.disabled = false;
+            }
+        };
+
+        // Event Handling Upload File & Copy
+        window.handleFileUpload = function(e) {
             const file = e.target.files[0];
             if (file) {
                 document.getElementById('fileName').innerText = file.name;
@@ -337,9 +390,8 @@
                 };
                 reader.readAsText(file);
             }
-        }
+        };
 
-        // Drag and Drop Effects
         const dropZone = document.getElementById('dropZone');
         ['dragenter', 'dragover'].forEach(eventName => {
             dropZone.addEventListener(eventName, (e) => {
@@ -355,66 +407,7 @@
             }, false);
         });
 
-        // Generate Raw Link via GitHub Gist API
-        async function createRawLink() {
-            const luaCode = document.getElementById('luaText').value;
-            if (!luaCode.trim()) {
-                alert('Harap masukkan teks atau upload file script Lua!');
-                return;
-            }
-
-            if (GITHUB_TOKEN === 'TOKEN_BARU_KAMU_DI_SINI') {
-                alert('Silakan ganti GITHUB_TOKEN di dalam kode script HTML dengan token GitHub kamu!');
-                return;
-            }
-
-            const btn = document.getElementById('btnGenerate');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Raw...`;
-            btn.disabled = true;
-
-            try {
-                // Mengirim skrip ke GitHub Gist
-                const response = await fetch('https://api.github.com/gists', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        description: 'Uploaded from LUA-HUB-RAW',
-                        public: true,
-                        files: {
-                            'script.lua': {
-                                content: luaCode
-                            }
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Gagal dari API GitHub. Periksa apakah Token valid.');
-                }
-
-                const data = await response.json();
-                
-                // Ambil URL Raw murni
-                const directRawUrl = data.files['script.lua'].raw_url;
-                const loadstringFormat = `loadstring(game:HttpGet("${directRawUrl}"))()`;
-
-                document.getElementById('rawUrlInput').value = directRawUrl;
-                document.getElementById('loadstringInput').value = loadstringFormat;
-                document.getElementById('resultBox').style.display = 'block';
-
-            } catch (err) {
-                alert('Error: ' + err.message);
-            } finally {
-                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Get Raw Link`;
-                btn.disabled = false;
-            }
-        }
-
-        // Clipboard Copy Logic
-        function copyToClipboard(id, btnElement) {
+        window.copyToClipboard = function(id, btnElement) {
             const inputField = document.getElementById(id);
             inputField.select();
             navigator.clipboard.writeText(inputField.value);
@@ -425,7 +418,7 @@
             setTimeout(() => {
                 btnElement.innerHTML = originalHTML;
             }, 1800);
-        }
+        };
     </script>
 </body>
 </html>
