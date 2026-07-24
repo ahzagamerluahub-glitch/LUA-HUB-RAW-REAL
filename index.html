@@ -113,7 +113,7 @@
             background: var(--input-bg);
             border: 2px dashed rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            padding: 24px;
+            padding: 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -127,9 +127,9 @@
         }
 
         .upload-zone i {
-            font-size: 28px;
+            font-size: 26px;
             color: var(--accent-green);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .upload-zone p {
@@ -154,7 +154,7 @@
 
         textarea {
             width: 100%;
-            height: 220px;
+            height: 180px;
             background: var(--input-bg);
             color: #58a6ff;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -168,7 +168,7 @@
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        textarea:focus {
+        textarea:focus, input[type="text"]:focus {
             border-color: var(--accent-green);
             box-shadow: 0 0 12px rgba(0, 255, 136, 0.15);
         }
@@ -274,6 +274,12 @@
             <p>Konversi script Lua Anda menjadi Raw Direct Loadstring secara instan</p>
         </header>
 
+        <!-- Custom Name / Slug Input -->
+        <div class="field-group">
+            <label><i class="fa-solid fa-tag"></i> Nama Script / Custom Slug (Tanpa Spasi)</label>
+            <input type="text" id="scriptSlug" placeholder="contoh: brookhaven-script-v2">
+        </div>
+
         <!-- Upload File Drag & Drop -->
         <div class="field-group">
             <label><i class="fa-solid fa-file-arrow-up"></i> Upload File Script</label>
@@ -320,12 +326,11 @@
         </div>
     </div>
 
-    <!-- Firebase Script (Module) -->
+    <!-- Script Logic dengan Firebase Firestore Custom Doc ID -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Config Firebase milikmu
         const firebaseConfig = {
             apiKey: "AIzaSyCXuhVe-wcs4ZX8ycsosa4HQZA6Fzch4oc",
             authDomain: "lua-hub-46f28.firebaseapp.com",
@@ -339,12 +344,21 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Menghubungkan fungsi ke global scope 'window' agar tombol HTML bisa memanggilnya
         window.createRawLink = async function() {
             const luaCode = document.getElementById('luaText').value;
+            let slugInput = document.getElementById('scriptSlug').value.trim();
+
             if (!luaCode.trim()) {
                 alert('Harap masukkan teks atau upload file script Lua!');
                 return;
+            }
+
+            // Jika Nama Script kosong, buat nama otomatis tanpa acak aneh
+            if (!slugInput) {
+                slugInput = "script-" + Date.now();
+            } else {
+                // Bersihkan spasi & karakter khusus agar aman di URL
+                slugInput = slugInput.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
             }
 
             const btn = document.getElementById('btnGenerate');
@@ -352,23 +366,14 @@
             btn.disabled = true;
 
             try {
-                // Membuat ID acak 6 Karakter
-                const scriptId = Math.random().toString(36).substring(2, 8);
-
-                // Timeout 8 detik jika koneksi bermasalah
-                const savePromise = setDoc(doc(db, "scripts", scriptId), {
+                // Menyimpan ke Firestore menggunakan custom ID pilihan kamu
+                await setDoc(doc(db, "scripts", slugInput), {
                     code: luaCode,
                     createdAt: new Date()
                 });
 
-                const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error("Timeout! Cek koneksi atau Firestore Rules kamu.")), 8000)
-                );
-
-                await Promise.race([savePromise, timeoutPromise]);
-
-                // Tautan Direct Raw & Loadstring Roblox
-                const directRawUrl = `https://asia-southeast1-lua-hub-46f28.cloudfunctions.net/getRaw?id=${scriptId}`;
+                // Tautan cantik sesuai nama yang diinput
+                const directRawUrl = `https://asia-southeast1-lua-hub-46f28.cloudfunctions.net/getRaw?id=${slugInput}`;
                 const loadstringFormat = `loadstring(game:HttpGet("${directRawUrl}"))()`;
 
                 document.getElementById('rawUrlInput').value = directRawUrl;
@@ -384,12 +389,17 @@
             }
         };
 
-        // Fungsi Pendukung File Upload & Copy Clipboard
         window.handleFileUpload = function(e) {
             const file = e.target.files[0];
             if (file) {
                 document.getElementById('fileName').innerText = file.name;
                 document.getElementById('fileInfo').style.display = 'block';
+
+                // Otomatis isi Nama Script berdasarkan nama file jika belum diisi
+                if (!document.getElementById('scriptSlug').value) {
+                    const cleanName = file.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+                    document.getElementById('scriptSlug').value = cleanName;
+                }
 
                 const reader = new FileReader();
                 reader.onload = function(evt) {
